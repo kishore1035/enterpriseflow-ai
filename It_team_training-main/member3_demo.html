@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Member 3 — IT Provisioning & Team Allocation Agents</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Design Tokens ───────────────────────────────────── */
+    :root {
+      --bg:           #070714;
+      --bg2:          #0d0d22;
+      --card:         rgba(255,255,255,0.04);
+      --card-border:  rgba(255,255,255,0.08);
+      --primary:      #6366f1;
+      --primary-dim:  rgba(99,102,241,0.15);
+      --blue:         #3b82f6;
+      --blue-dim:     rgba(59,130,246,0.15);
+      --orange:       #f97316;
+      --orange-dim:   rgba(249,115,22,0.15);
+      --green:        #10b981;
+      --green-dim:    rgba(16,185,129,0.15);
+      --amber:        #f59e0b;
+      --amber-dim:    rgba(245,158,11,0.15);
+      --red:          #ef4444;
+      --red-dim:      rgba(239,68,68,0.15);
+      --purple:       #8b5cf6;
+      --pink:         #ec4899;
+      --text:         #e2e8f0;
+      --text-muted:   #94a3b8;
+      --text-dim:     #475569;
+      --radius:       14px;
+      --font:         'Inter', sans-serif;
+      --mono:         'JetBrains Mono', monospace;
+    }
+
+    /* ── Reset ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated Background ─────────────────────────────── */
+    .bg-orbs {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      overflow: hidden;
+    }
+    .orb {
+      position: absolute; border-radius: 50%;
+      filter: blur(90px); opacity: 0.18;
+      animation: orb-drift 18s ease-in-out infinite alternate;
+    }
+    .orb-1 { width: 500px; height: 500px; background: #6366f1; top: -150px; left: -100px; }
+    .orb-2 { width: 400px; height: 400px; background: #f97316; bottom: -100px; right: -80px; animation-delay: -6s; }
+    .orb-3 { width: 300px; height: 300px; background: #3b82f6; top: 40%; left: 40%; animation-delay: -12s; }
+    @keyframes orb-drift {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(40px, 30px) scale(1.1); }
+    }
+
+    /* ── Layout ──────────────────────────────────────────── */
+    .app { position: relative; z-index: 1; }
+
+    /* ── Header ──────────────────────────────────────────── */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 32px;
+      background: rgba(7,7,20,0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--card-border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; box-shadow: 0 0 20px rgba(99,102,241,0.4);
+    }
+    .logo-name { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+    .logo-sub  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .header-badges { display: flex; gap: 8px; align-items: center; }
+    .badge {
+      padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .badge-m3 { background: var(--orange-dim); color: var(--orange); border: 1px solid rgba(249,115,22,0.25); }
+    .badge-hitl { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,0.25); }
+
+    /* ── Setup Screen ────────────────────────────────────── */
+    #setup-screen { max-width: 900px; margin: 0 auto; padding: 60px 24px 40px; }
+    .hero-label {
+      display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+      color: var(--orange); text-transform: uppercase; margin-bottom: 16px;
+      background: var(--orange-dim); padding: 5px 14px; border-radius: 20px;
+      border: 1px solid rgba(249,115,22,0.25);
+    }
+    .hero-title {
+      font-size: clamp(32px, 5vw, 52px); font-weight: 800; line-height: 1.15;
+      letter-spacing: -1.5px; margin-bottom: 14px;
+    }
+    .grad-it   { background: linear-gradient(90deg, #3b82f6, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .grad-team { background: linear-gradient(90deg, #f97316, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero-sub {
+      font-size: 16px; color: var(--text-muted); line-height: 1.7; max-width: 600px; margin-bottom: 40px;
+    }
+
+    /* Agent Preview Cards */
+    .agent-preview-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 40px; }
+    .agent-preview-card {
+      background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius);
+      padding: 22px 24px; position: relative; overflow: hidden;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .agent-preview-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .apc-it::before   { background: linear-gradient(90deg, #3b82f6, #6366f1); }
+    .apc-team::before { background: linear-gradient(90deg, #f97316, #f59e0b); }
+    .agent-preview-card:hover { transform: translateY(-2px); }
+    .apc-it:hover   { border-color: rgba(59,130,246,0.3); }
+    .apc-team:hover { border-color: rgba(249,115,22,0.3); }
+    .apc-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .apc-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+    }
+    .apc-it   .apc-icon { background: var(--blue-dim); }
+    .apc-team .apc-icon { background: var(--orange-dim); }
+    .apc-title { font-size: 15px; font-weight: 700; }
+    .apc-role  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .apc-steps { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .apc-steps li {
+      font-size: 12px; color: var(--text-muted); display: flex; align-items: flex-start; gap: 8px; line-height: 1.5;
+    }
+    .apc-steps li::before {
+      content: '↳'; font-size: 11px; margin-top: 1px; flex-shrink: 0;
+    }
+    .apc-it   .apc-steps li::before { color: var(--blue);   }
+    .apc-team .apc-steps li::before { color: var(--orange); }
+    .hitl-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,0.25);
+      font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 20px; margin-top: 12px;
+    }
+    .hitl-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); animation: pulse-dot 1.5s infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+
+    /* Employee Selector */
+    .section-label { font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 16px; }
+    .emp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px; margin-bottom: 32px; }
+    .emp-card {
+      background: var(--card); border: 2px solid var(--card-border); border-radius: var(--radius);
+      padding: 18px 14px; cursor: pointer; text-align: center;
+      transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    .emp-card:hover { background: rgba(255,255,255,0.07); transform: translateY(-2px); }
+    .emp-card.selected { border-color: var(--primary); background: var(--primary-dim); box-shadow: 0 0 20px rgba(99,102,241,0.2); }
+    .emp-avatar {
+      width: 48px; height: 48px; border-radius: 50%; margin: 0 auto 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 700; color: #fff;
+    }
+    .emp-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+    .emp-role { font-size: 10px; color: var(--text-muted); line-height: 1.4; }
+    .emp-dept { font-size: 10px; margin-top: 6px; font-weight: 600; padding: 2px 8px; border-radius: 10px; display: inline-block; }
+
+    /* Start Button */
+    .start-btn {
+      width: 100%; padding: 18px; border: none; border-radius: var(--radius);
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white; font-size: 16px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: all 0.3s; letter-spacing: -0.2px;
+      box-shadow: 0 4px 24px rgba(99,102,241,0.35);
+    }
+    .start-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99,102,241,0.5); }
+    .start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .start-btn-arrow { font-size: 20px; }
+
+    /* ── Dashboard ───────────────────────────────────────── */
+    #dashboard { display: none; padding: 20px 24px; gap: 16px; min-height: calc(100vh - 70px); }
+    #dashboard.visible {
+      display: grid;
+      grid-template-columns: 300px 1fr 380px;
+      grid-template-rows: auto 1fr;
+    }
+
+    /* Dash header row */
+    .dash-topbar {
+      grid-column: 1 / -1;
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius);
+      padding: 14px 20px;
+    }
+    .dash-emp-row { display: flex; align-items: center; gap: 14px; }
+    .dash-emp-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .dash-emp-name { font-size: 15px; font-weight: 700; }
+    .dash-emp-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .dash-progress-wrap { display: flex; align-items: center; gap: 16px; }
+    .progress-track {
+      width: 220px; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+      width: 0%;
+    }
+    .progress-pct { font-size: 13px; font-weight: 700; color: var(--primary-light, #818cf8); min-width: 36px; text-align: right; }
+    .stage-label-text { font-size: 11px; color: var(--text-muted); }
+
+    /* Left column */
+    .col-left { display: flex; flex-direction: column; gap: 14px; }
+
+    /* Cards */
+    .dash-card {
+      background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .card-head {
+      padding: 14px 18px 0; display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-title { font-size: 13px; font-weight: 700; color: var(--text); }
+    .card-body { padding: 14px 18px; }
+
+    /* Agent List */
+    .agent-item {
+      display: flex; align-items: center; gap: 12px; padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .agent-item:last-child { border-bottom: none; }
+    .agent-status-ring {
+      width: 36px; height: 36px; border-radius: 50%; position: relative; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.06); font-size: 17px;
+      border: 2px solid rgba(255,255,255,0.1);
+      transition: border-color 0.3s;
+    }
+    .agent-status-ring.working {
+      border-color: var(--agent-color, #6366f1);
+      box-shadow: 0 0 12px var(--agent-color, #6366f1);
+      animation: ring-pulse 1.5s ease-in-out infinite;
+    }
+    .agent-status-ring.waiting {
+      border-color: var(--amber);
+      box-shadow: 0 0 12px var(--amber);
+      animation: ring-spin 2s linear infinite;
+    }
+    .agent-status-ring.idle { border-color: rgba(255,255,255,0.1); }
+    @keyframes ring-pulse { 0%,100%{box-shadow:0 0 8px var(--agent-color,#6366f1)} 50%{box-shadow:0 0 20px var(--agent-color,#6366f1)} }
+    @keyframes ring-spin  { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .agent-name  { font-size: 12px; font-weight: 600; }
+    .agent-state { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+    .agent-state.working { color: var(--agent-color, #6366f1); }
+    .agent-state.waiting { color: var(--amber); }
+
+    /* Pipeline Timeline */
+    .col-center { overflow: hidden; }
+    .pipeline-scroll { height: calc(100vh - 180px); overflow-y: auto; padding: 16px 18px; }
+    .pipeline-scroll::-webkit-scrollbar { width: 4px; }
+    .pipeline-scroll::-webkit-scrollbar-track { background: transparent; }
+    .pipeline-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .stage-item {
+      display: flex; gap: 14px; margin-bottom: 4px; position: relative;
+    }
+    .stage-connector {
+      display: flex; flex-direction: column; align-items: center; flex-shrink: 0;
+    }
+    .stage-dot {
+      width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center; font-size: 13px;
+      background: var(--bg2); transition: all 0.4s; flex-shrink: 0; position: relative; z-index: 1;
+    }
+    .stage-line {
+      width: 2px; flex: 1; min-height: 14px; background: rgba(255,255,255,0.07);
+      transition: background 0.4s;
+    }
+    .stage-item:last-child .stage-line { display: none; }
+
+    .stage-card {
+      flex: 1; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 12px 16px; margin-bottom: 10px;
+      transition: all 0.4s; opacity: 0.5;
+    }
+    .stage-row { display: flex; align-items: center; justify-content: space-between; }
+    .stage-name { font-size: 13px; font-weight: 600; }
+    .stage-agent-tag {
+      font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600;
+      background: rgba(255,255,255,0.07); color: var(--text-muted);
+    }
+    .stage-status-label { font-size: 10px; color: var(--text-dim); margin-top: 4px; }
+    .gate-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 10px; margin-top: 6px;
+      background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,0.2);
+    }
+
+    /* Stage States */
+    .stage-item.active .stage-card    { opacity: 1; border-color: rgba(99,102,241,0.3); background: var(--primary-dim); }
+    .stage-item.active .stage-dot     { border-color: var(--primary); background: var(--primary-dim); box-shadow: 0 0 12px rgba(99,102,241,0.5); animation: ring-pulse 1.5s infinite; --agent-color: #6366f1; }
+    .stage-item.active .stage-line    { background: var(--primary); }
+    .stage-item.completed .stage-card { opacity: 1; border-color: rgba(16,185,129,0.25); background: var(--green-dim); }
+    .stage-item.completed .stage-dot  { border-color: var(--green); background: var(--green-dim); }
+    .stage-item.completed .stage-line { background: var(--green); }
+    .stage-item.pending .stage-card   { opacity: 1; border-color: rgba(245,158,11,0.3); background: var(--amber-dim); animation: gate-glow 2s ease-in-out infinite; }
+    .stage-item.pending .stage-dot    { border-color: var(--amber); background: var(--amber-dim); animation: ring-spin 2s linear infinite; }
+    .stage-item.rejected .stage-card  { opacity: 1; border-color: rgba(239,68,68,0.3); background: var(--red-dim); }
+    @keyframes gate-glow { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 20px rgba(245,158,11,0.15)} }
+
+    /* Log Feed */
+    .col-right { overflow: hidden; }
+    .log-card { height: calc(100vh - 180px); display: flex; flex-direction: column; }
+    .log-head  { padding: 14px 18px; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .log-count { font-size: 11px; color: var(--text-muted); background: rgba(255,255,255,0.06); padding: 3px 9px; border-radius: 10px; }
+    .log-scroll { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+    .log-scroll::-webkit-scrollbar { width: 3px; }
+    .log-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+    .log-entry {
+      display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border-radius: 8px;
+      animation: log-slide-in 0.25s ease; font-size: 12px; line-height: 1.5;
+      border-left: 3px solid transparent;
+    }
+    @keyframes log-slide-in { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:none} }
+    .log-agent-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .log-content { flex: 1; min-width: 0; }
+    .log-text  { color: var(--text-muted); word-break: break-word; }
+    .log-time  { font-size: 10px; color: var(--text-dim); margin-top: 2px; font-family: var(--mono); }
+    /* Log types */
+    .log-system  { background:rgba(99,102,241,0.07); border-color:var(--primary); }
+    .log-system  .log-text { color: #a5b4fc; }
+    .log-success { background:rgba(16,185,129,0.07); border-color:var(--green); }
+    .log-success .log-text { color: #6ee7b7; }
+    .log-error   { background:rgba(239,68,68,0.07); border-color:var(--red); }
+    .log-error   .log-text { color: #fca5a5; }
+    .log-warning { background:rgba(245,158,11,0.07); border-color:var(--amber); }
+    .log-warning .log-text { color: #fde68a; }
+    .log-gate    { background:rgba(249,115,22,0.1); border-color:var(--orange); }
+    .log-gate    .log-text { color: #fdba74; font-weight: 600; }
+    .log-delegate{ background:rgba(139,92,246,0.07); border-color:var(--purple); }
+    .log-delegate .log-text { color: #c4b5fd; }
+    .log-task    { background:rgba(255,255,255,0.03); border-color:rgba(255,255,255,0.1); }
+    .log-complete{ background:rgba(251,191,36,0.08); border-color:#fbbf24; }
+    .log-complete .log-text { color: #fde68a; font-weight: 700; }
+    .log-info { background:rgba(59,130,246,0.05); border-color:var(--blue); }
+    .log-info .log-text { color: #93c5fd; }
+
+    /* ── Approval Modal ──────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(10px);
+      display: flex; align-items: flex-end; justify-content: center;
+      padding: 0 0 0 0;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .modal-overlay.visible { opacity: 1; pointer-events: all; }
+    .approval-modal {
+      background: #0f0f25; border: 1px solid rgba(255,255,255,0.12);
+      border-bottom: none; border-radius: 24px 24px 0 0;
+      width: 100%; max-width: 640px; padding: 0;
+      transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+    }
+    .modal-overlay.visible .approval-modal { transform: translateY(0); }
+
+    .modal-drag { width: 40px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; margin: 14px auto 0; }
+    .modal-body { padding: 24px 28px 32px; }
+    .modal-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 22px; }
+    .modal-agent-icon {
+      width: 52px; height: 52px; border-radius: 16px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 26px;
+      position: relative;
+    }
+    .modal-agent-icon::after {
+      content: ''; position: absolute; inset: -3px; border-radius: 19px;
+      border: 2px solid; animation: ring-spin 3s linear infinite; opacity: 0.5;
+    }
+    .modal-title { font-size: 19px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 5px; }
+    .modal-desc  { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+    .modal-approver-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      font-size: 11px; font-weight: 600; color: var(--text-muted);
+      padding: 5px 12px; border-radius: 20px; margin-bottom: 18px;
+    }
+
+    .checklist { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .check-item {
+      display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .check-item:hover { background: rgba(255,255,255,0.06); }
+    .check-box {
+      width: 20px; height: 20px; border-radius: 6px; border: 2px solid rgba(255,255,255,0.2);
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; cursor: pointer;
+    }
+    .check-item.checked .check-box { background: var(--green); border-color: var(--green); }
+    .check-item.checked .check-box::after { content: '✓'; color: #fff; font-size: 12px; font-weight: 700; }
+    .check-text { font-size: 13px; color: var(--text-muted); transition: color 0.2s; user-select: none; }
+    .check-item.checked .check-text { color: var(--text); }
+
+    .notes-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: block; }
+    .notes-input {
+      width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+      color: var(--text); font-family: var(--font); font-size: 13px; resize: none;
+      outline: none; transition: border-color 0.2s; height: 72px;
+    }
+    .notes-input:focus { border-color: rgba(99,102,241,0.4); }
+    .modal-actions { display: flex; gap: 12px; margin-top: 18px; }
+    .btn-reject {
+      flex: 1; padding: 14px; border: 1px solid rgba(239,68,68,0.3); border-radius: 10px;
+      background: var(--red-dim); color: var(--red); font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-reject:hover { background: rgba(239,68,68,0.2); }
+    .btn-approve {
+      flex: 2; padding: 14px; border: none; border-radius: 10px;
+      background: linear-gradient(135deg, #10b981, #059669); color: white;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 4px 16px rgba(16,185,129,0.3);
+    }
+    .btn-approve:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(16,185,129,0.4); }
+
+    /* ── Completion Screen ───────────────────────────────── */
+    .completion-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(16px);
+      display: none; align-items: center; justify-content: center;
+    }
+    .completion-overlay.visible { display: flex; }
+    .completion-card {
+      background: linear-gradient(135deg, #0f0f25, #14142e);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 24px;
+      padding: 48px; text-align: center; max-width: 500px; width: 90%;
+      animation: card-pop 0.5s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes card-pop { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
+    .completion-emoji { font-size: 64px; margin-bottom: 20px; animation: bounce 1s ease infinite alternate; }
+    @keyframes bounce { from{transform:translateY(0)} to{transform:translateY(-10px)} }
+    .completion-card h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .completion-card p  { color: var(--text-muted); font-size: 15px; margin-bottom: 24px; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+    .stat-box {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 16px;
+    }
+    .stat-num  { font-size: 24px; font-weight: 800; color: var(--primary-light, #818cf8); }
+    .stat-name { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+    .restart-btn {
+      width: 100%; padding: 15px; border: none; border-radius: 12px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white; font-size: 15px; font-weight: 700; cursor: pointer;
+      transition: all 0.3s;
+    }
+    .restart-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.4); }
+
+    /* ── Utilities ───────────────────────────────────────── */
+    .hidden { display: none !important; }
+    @media (max-width: 1100px) {
+      #dashboard.visible { grid-template-columns: 260px 1fr 320px; }
+    }
+    @media (max-width: 860px) {
+      #dashboard.visible { grid-template-columns: 1fr; grid-template-rows: auto; }
+      .col-left { grid-row: 3; }
+      .col-right { grid-row: 2; }
+      .log-card { height: 320px; }
+      .pipeline-scroll { height: auto; max-height: 500px; }
+      .agent-preview-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-name">TrizenHR</div>
+        <div class="logo-sub">Agentic Onboarding System</div>
+      </div>
+    </div>
+    <div class="header-badges">
+      <span class="badge badge-m3">👤 Member 3 — IT &amp; Team</span>
+      <span class="badge badge-hitl">⚠️ Human-in-the-Loop</span>
+    </div>
+  </header>
+
+  <!-- Setup Screen -->
+  <main id="setup-screen">
+    <span class="hero-label">Member 3 Deliverable</span>
+    <h1 class="hero-title">
+      <span class="grad-it">IT Provisioning</span> &amp;<br/>
+      <span class="grad-team">Team Allocation</span> Agents
+    </h1>
+    <p class="hero-sub">
+      Two AI agents handle system access provisioning and team assignment for new hires —
+      each with a human-in-the-loop approval checkpoint before proceeding.
+    </p>
+
+    <!-- Agent Preview -->
+    <div class="agent-preview-row">
+      <div class="agent-preview-card apc-it">
+        <div class="apc-head">
+          <div class="apc-icon">💻</div>
+          <div>
+            <div class="apc-title">IT Provisioning Agent</div>
+            <div class="apc-role">Systems &amp; Access Management</div>
+          </div>
+        </div>
+        <ul class="apc-steps">
+          <li>Request corporate email creation</li>
+          <li>Raise laptop allocation ticket</li>
+          <li>Request software access (Slack, Jira, GitHub…)</li>
+          <li>Create master IT ticket</li>
+          <li>Track completion after approval</li>
+        </ul>
+        <div class="hitl-tag"><div class="hitl-dot"></div> IT Staff Approval Required</div>
+      </div>
+      <div class="agent-preview-card apc-team">
+        <div class="apc-head">
+          <div class="apc-icon">👥</div>
+          <div>
+            <div class="apc-title">Team Allocation Agent</div>
+            <div class="apc-role">Department &amp; Manager Assignment</div>
+          </div>
+        </div>
+        <ul class="apc-steps">
+          <li>Assign department &amp; team</li>
+          <li>Assign reporting manager</li>
+          <li>Share team contacts &amp; buddy</li>
+          <li>Create Day 1 task list</li>
+          <li>Schedule calendar events</li>
+        </ul>
+        <div class="hitl-tag"><div class="hitl-dot"></div> Manager Confirmation Required</div>
+      </div>
+    </div>
+
+    <p class="section-label">Select New Employee</p>
+    <div class="emp-grid" id="emp-grid"></div>
+
+    <button class="start-btn" id="start-btn" disabled>
+      <span class="start-btn-arrow">▶</span>
+      Run IT Provisioning &amp; Team Allocation Pipeline
+    </button>
+  </main>
+
+  <!-- Dashboard -->
+  <div id="dashboard">
+    <!-- Top bar -->
+    <div class="dash-topbar">
+      <div class="dash-emp-row">
+        <div class="dash-emp-avatar" id="dash-avatar"></div>
+        <div>
+          <div class="dash-emp-name" id="dash-name"></div>
+          <div class="dash-emp-meta" id="dash-meta"></div>
+        </div>
+      </div>
+      <div class="dash-progress-wrap">
+        <div>
+          <div class="stage-label-text" id="stage-label-text">Initializing…</div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-pct" id="progress-pct">0%</div>
+      </div>
+    </div>
+
+    <!-- Left: Agents -->
+    <div class="col-left">
+      <div class="dash-card">
+        <div class="card-head"><span class="card-title">🤖 Active Agents</span></div>
+        <div class="card-body" id="agent-roster"></div>
+      </div>
+    </div>
+
+    <!-- Center: Pipeline -->
+    <div class="col-center">
+      <div class="dash-card">
+        <div class="card-head" style="padding:14px 18px 10px;">
+          <span class="card-title">🔀 Pipeline Stages</span>
+        </div>
+        <div class="pipeline-scroll" id="pipeline-stages"></div>
+      </div>
+    </div>
+
+    <!-- Right: Logs -->
+    <div class="col-right">
+      <div class="dash-card log-card">
+        <div class="log-head">
+          <span class="card-title">📡 Live Activity Feed</span>
+          <span class="log-count" id="log-count">0 events</span>
+        </div>
+        <div class="log-scroll" id="log-feed"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Approval Modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="approval-modal">
+      <div class="modal-drag"></div>
+      <div class="modal-body">
+        <div class="modal-header">
+          <div class="modal-agent-icon" id="modal-agent-icon"></div>
+          <div>
+            <div class="modal-title" id="modal-title"></div>
+            <div class="modal-desc"  id="modal-desc"></div>
+          </div>
+        </div>
+        <div class="modal-approver-tag" id="modal-approver-tag"></div>
+        <div class="checklist" id="modal-checklist"></div>
+        <label class="notes-label" for="modal-notes">📝 Approval Notes (optional)</label>
+        <textarea class="notes-input" id="modal-notes" placeholder="Add comments or instructions for the onboarding team…"></textarea>
+        <div class="modal-actions">
+          <button class="btn-reject" id="btn-reject">✕ Reject</button>
+          <button class="btn-approve" id="btn-approve">✓ Approve &amp; Continue</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Completion -->
+  <div class="completion-overlay" id="completion-overlay">
+    <div class="completion-card">
+      <div class="completion-emoji">🎉</div>
+      <h2>Pipeline Complete!</h2>
+      <p id="comp-employee"></p>
+      <div class="stats-grid" id="comp-stats"></div>
+      <button class="restart-btn" id="restart-btn">↺ Onboard Another Employee</button>
+    </div>
+  </div>
+
+</div><!-- .app -->
+
+<script type="module">
+// ═══════════════════════════════════════════════════════════════
+//  Inline Supervisor  (Member 3 standalone — no external import)
+// ═══════════════════════════════════════════════════════════════
+
+// ── Synthetic Data (inline for standalone) ──────────────────
+const EMPLOYEES = [
+  { id:"EMP-001", name:"Arjun Mehta",   role:"Senior Software Engineer", department:"Engineering",     email:"arjun.mehta@trizen.ai",   manager:"Priya Sharma",  location:"Bangalore", avatar:"AM", avatarColor:"#6366f1", team:"Platform Engineering",   buddy:"Rohan Verma",    joiningDate:"2024-11-04", itAssets:{laptop:'MacBook Pro 14" M3'} },
+  { id:"EMP-002", name:"Sneha Patel",   role:"Product Designer",         department:"Design",          email:"sneha.patel@trizen.ai",   manager:"Kiran Rao",     location:"Mumbai",    avatar:"SP", avatarColor:"#ec4899", team:"Product Design",         buddy:"Ananya Singh",   joiningDate:"2024-11-05", itAssets:{laptop:'MacBook Air 15" M2'} },
+  { id:"EMP-003", name:"Rahul Gupta",   role:"Finance Analyst",          department:"Finance",         email:"rahul.gupta@trizen.ai",   manager:"Deepa Krishnan",location:"Hyderabad", avatar:"RG", avatarColor:"#10b981", team:"Financial Planning & Analysis", buddy:"Meera Nair", joiningDate:"2024-11-06", itAssets:{laptop:"Dell XPS 15"} },
+  { id:"EMP-004", name:"Divya Nair",    role:"HR Business Partner",      department:"Human Resources", email:"divya.nair@trizen.ai",    manager:"Suresh Iyer",   location:"Chennai",   avatar:"DN", avatarColor:"#f59e0b", team:"HR Operations",          buddy:"Preethi Reddy",  joiningDate:"2024-11-07", itAssets:{laptop:"HP EliteBook 840"} },
+  { id:"EMP-005", name:"Vikram Singh",  role:"Sales Executive",          department:"Sales",           email:"vikram.singh@trizen.ai",  manager:"Amit Khanna",   location:"Delhi",     avatar:"VS", avatarColor:"#ef4444", team:"Enterprise Sales",       buddy:"Kabir Malhotra", joiningDate:"2024-11-08", itAssets:{laptop:"Lenovo ThinkPad X1"} },
+];
+
+const AGENT_PROFILES = {
+  supervisor:{ name:"Supervisor Agent",       icon:"🧠", color:"#6366f1", role:"Orchestration" },
+  it:        { name:"IT Provisioning Agent",  icon:"💻", color:"#3b82f6", role:"Systems & Access" },
+  team:      { name:"Team Allocation Agent",  icon:"👥", color:"#f97316", role:"Dept & Manager" },
+};
+
+// ── Mock APIs (inline) ──────────────────────────────────────
+const uid = () => Math.random().toString(36).slice(2,8).toUpperCase();
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const SOFTWARE_BUNDLES = {
+  Engineering:      [{name:"Slack",icon:"💬"},{name:"GitHub",icon:"🐙"},{name:"Jira",icon:"📋"},{name:"Confluence",icon:"📚"},{name:"AWS Console",icon:"☁️"},{name:"VPN (Tailscale)",icon:"🔐"},{name:"Datadog",icon:"🐶"}],
+  Design:           [{name:"Slack",icon:"💬"},{name:"Figma",icon:"🎨"},{name:"Notion",icon:"📒"},{name:"Jira",icon:"📋"},{name:"Zeplin",icon:"🛠️"},{name:"VPN (Tailscale)",icon:"🔐"}],
+  Finance:          [{name:"Slack",icon:"💬"},{name:"SAP ERP",icon:"🏭"},{name:"Zoho Books",icon:"📊"},{name:"Excel 365",icon:"📈"},{name:"Power BI",icon:"📉"},{name:"VPN (Tailscale)",icon:"🔐"}],
+  "Human Resources":[{name:"Slack",icon:"💬"},{name:"Darwinbox",icon:"👥"},{name:"BambooHR",icon:"🎋"},{name:"Excel 365",icon:"📈"},{name:"Zoom",icon:"📹"},{name:"VPN (Tailscale)",icon:"🔐"}],
+  Sales:            [{name:"Slack",icon:"💬"},{name:"Salesforce",icon:"☁️"},{name:"HubSpot",icon:"🟠"},{name:"Zoom",icon:"📹"},{name:"LinkedIn Sales Nav",icon:"🔷"},{name:"VPN (Tailscale)",icon:"🔐"}],
+};
+
+const LAPTOP_MAP = {
+  Engineering:"MacBook Pro 14\" M3 Pro / 18GB / 512GB SSD",
+  Design:"MacBook Air 15\" M2 / 16GB / 512GB SSD",
+  Finance:"Dell XPS 15 / 16GB / 256GB SSD",
+  "Human Resources":"HP EliteBook 840 G10 / 16GB / 256GB SSD",
+  Sales:"Lenovo ThinkPad X1 Carbon / 16GB / 512GB SSD",
+};
+
+const DAY1_TASKS = {
+  Engineering:["Attend Dev Standup (9:00 AM)","Set up local dev environment","Clone primary repos from GitHub","Read Architecture Decision Records","Meet buddy for codebase walkthrough","Complete Security & Compliance training","Join #engineering Slack channel","1-on-1 with Engineering Manager (3 PM)"],
+  Design:["Attend Design Sync (10:00 AM)","Access Figma & explore Design System","Review Brand Guidelines","Meet Design buddy for tool walkthrough","Complete Design Onboarding 101","Join #design Slack channel","1-on-1 with Design Lead (4 PM)"],
+  Finance:["Attend Finance Briefing (9:30 AM)","Set up ERP system (SAP/Zoho)","Review Q4 Financial Reports","Complete Compliance & Audit training","Meet Finance buddy","Join #finance Slack channel","1-on-1 with Finance Manager (3:30 PM)"],
+  "Human Resources":["Attend HR All-Hands (9:00 AM)","Access HRMS & employee portal","Review HR Policies & Handbook","Complete Labor Law Compliance course","Meet HR buddy","Join #hr-team Slack channel","1-on-1 with HR Lead (4 PM)"],
+  Sales:["Attend Sales Kick-off Call (8:30 AM)","Set up CRM access (Salesforce)","Study Product Catalog & Pricing","Complete Sales Playbook training","Shadow a senior Sales call","Join #sales Slack channel","1-on-1 with Sales Manager (3 PM)"],
+};
+
+// ── IT Provisioning Agent (inline) ─────────────────────────
+class ITPAgent extends EventTarget {
+  log(msg, type='info') { this.dispatchEvent(new CustomEvent('log',{detail:{msg,type,agent:'it'}})); }
+  async run(employee, onApprovalNeeded) {
+    this.log(`💻 IT Provisioning Agent activated for ${employee.name}`,'system');
+    this.log(`🆔 ID: ${employee.id} | Role: ${employee.role} | Dept: ${employee.department}`,'info');
+    await sleep(600);
+
+    // Step 1 — Email
+    this.log('📧 Requesting corporate email creation…','task');
+    await sleep(700);
+    const first = employee.name.split(' ')[0].toLowerCase();
+    const last  = employee.name.split(' ').slice(1).join('.').toLowerCase();
+    const email = `${first}.${last}@trizen.ai`;
+    this.log(`  ↳ Email created: ${email}`,'success');
+    this.log(`  ↳ Quota: 30 GB | Groups: all-staff@, ${employee.department.toLowerCase().replace(/ /g,'-')}@trizen.ai`,'info');
+    await sleep(500);
+
+    // Step 2 — Laptop
+    this.log('💻 Raising laptop allocation ticket…','task');
+    await sleep(700);
+    const laptopSpec = LAPTOP_MAP[employee.department] || 'Lenovo IdeaPad Pro / 8GB / 256GB';
+    const hwTicket   = `HW-${uid()}`;
+    this.log(`  ↳ Ticket #${hwTicket} raised`,'success');
+    this.log(`  ↳ Spec: ${laptopSpec}`,'info');
+    this.log(`  ↳ Delivery to ${employee.location} | Vendor: TechMart India`,'info');
+    await sleep(500);
+
+    // Step 3 — Software
+    this.log('🔧 Requesting software access bundle…','task');
+    const softwareList = SOFTWARE_BUNDLES[employee.department] || SOFTWARE_BUNDLES['Engineering'];
+    for (const sw of softwareList) {
+      await sleep(280);
+      this.log(`  ↳ ${sw.icon} ${sw.name}: access requested ✓`,'task');
+    }
+    this.log(`  ↳ ${softwareList.length} software access requests submitted`,'success');
+    await sleep(400);
+
+    // Step 4 — Master Ticket
+    this.log('🎫 Creating master IT provisioning ticket…','task');
+    await sleep(600);
+    const masterTicket = `IT-MASTER-${uid()}`;
+    this.log(`  ↳ Master ticket #${masterTicket} created`,'success');
+    this.log('  ↳ IT Staff notified via email & Slack','info');
+    await sleep(300);
+
+    // ⚠️ HUMAN GATE
+    this.log('⚠️  HUMAN GATE: IT Staff approval required before access is activated','gate');
+    this.log('🔴 Agent paused — waiting for IT Manager sign-off…','warning');
+
+    return new Promise(resolve => {
+      onApprovalNeeded({
+        title:    '🔐 IT Access Approval Required',
+        desc:     'IT Manager must approve system access levels and hardware allocation before activation.',
+        agent:    'it',
+        approver: '👤 IT Manager',
+        checklist:[
+          'Access level verified (role-appropriate permissions)',
+          'Hardware allocation confirmed & delivery scheduled',
+          'Security awareness training acknowledgment received',
+          'MFA enrollment completed',
+          'VPN access granted with least-privilege principle',
+        ],
+        onResult: async ({approved, notes}) => {
+          if (approved) {
+            this.log(`✅ IT Access APPROVED${notes?' — '+notes:''}`, 'success');
+            this.log('▶️  Activating all provisioned access…','info');
+            await sleep(500);
+            this.log('  ↳ 📧 Email account activated','success');
+            await sleep(300);
+            this.log('  ↳ 💻 Laptop dispatch confirmed','success');
+            await sleep(300);
+            this.log('  ↳ 🔧 All software licenses activated','success');
+            await sleep(300);
+            this.log('🎉 IT Provisioning COMPLETE','complete');
+          } else {
+            this.log(`❌ IT Access REJECTED${notes?' — '+notes:''}`, 'error');
+            this.log('🔄 Rolling back & resubmitting for correction…','warning');
+            await sleep(800);
+            this.log('✅ Corrected request resubmitted','success');
+          }
+          resolve();
+        }
+      });
+    });
+  }
+}
+
+// ── Team Allocation Agent (inline) ─────────────────────────
+class TeamAgent extends EventTarget {
+  log(msg, type='info') { this.dispatchEvent(new CustomEvent('log',{detail:{msg,type,agent:'team'}})); }
+  async run(employee, onApprovalNeeded) {
+    this.log(`👥 Team Allocation Agent activated for ${employee.name}`,'system');
+    this.log(`🏢 Target Dept: ${employee.department} | Team: ${employee.team} | Manager: ${employee.manager}`,'info');
+    await sleep(600);
+
+    // Step 1 — Department
+    this.log('🏢 Assigning department & team…','task');
+    await sleep(700);
+    this.log(`  ↳ Department: ${employee.department}`,'success');
+    this.log(`  ↳ Team: ${employee.team}`,'success');
+    const desk = `${['3rd','2nd','4th','1st'][Math.floor(Math.random()*4)]} Floor — Desk #${employee.department.slice(0,3).toUpperCase()}-${uid()}`;
+    this.log(`  ↳ Desk allocation: ${desk}`,'info');
+    await sleep(400);
+
+    // Step 2 — Manager
+    this.log('👤 Assigning reporting manager…','task');
+    await sleep(700);
+    const mgFirst = employee.manager.split(' ')[0].toLowerCase();
+    const mgLast  = employee.manager.split(' ').slice(1).join('.').toLowerCase();
+    this.log(`  ↳ Reporting Manager: ${employee.manager}`,'success');
+    this.log(`  ↳ Manager Email: ${mgFirst}.${mgLast}@trizen.ai`,'info');
+    this.log('  ↳ Manager notified via email & Slack','info');
+    await sleep(400);
+
+    // Step 3 — Contacts & Buddy
+    this.log('📋 Compiling team contacts & assigning buddy…','task');
+    await sleep(600);
+    this.log(`  ↳ Buddy assigned: ${employee.buddy}`,'success');
+    this.log('  ↳ Buddy introduction email sent','info');
+    const dept    = employee.department;
+    const channels= {Engineering:['#engineering','#platform-team','#dev-ops'],Design:['#design','#product'],Finance:['#finance','#accounting'],'Human Resources':['#hr-team','#people-ops'],Sales:['#sales','#enterprise-sales']}[dept]||['#general'];
+    channels.unshift('#general','#announcements');
+    this.log(`  ↳ Added to Slack: ${channels.join(', ')}`,'success');
+    this.log('  ↳ Team directory link shared via email','info');
+    await sleep(400);
+
+    // Step 4 — Day 1 Tasks
+    this.log('📝 Generating Day 1 task list…','task');
+    await sleep(600);
+    const tasks = DAY1_TASKS[employee.department] || DAY1_TASKS['Engineering'];
+    tasks.forEach(t => this.log(`  ↳ ☑ ${t}`,'task'));
+    this.log(`  ↳ ${tasks.length} tasks created | 3 calendar events scheduled`,'success');
+    this.log(`  ↳ Task list emailed to ${employee.name} & ${employee.manager}`,'info');
+    await sleep(400);
+
+    // ⚠️ HUMAN GATE
+    this.log('📨 Sending assignment summary to manager for confirmation…','task');
+    await sleep(500);
+    this.log('⚠️  HUMAN GATE: Manager must confirm team assignment','gate');
+    this.log(`🔴 Agent paused — waiting for ${employee.manager}'s approval…`,'warning');
+
+    return new Promise(resolve => {
+      onApprovalNeeded({
+        title:    '👥 Manager Confirmation Required',
+        desc:     `${employee.manager} must review and confirm the team allocation, buddy assignment, and Day 1 task list.`,
+        agent:    'team',
+        approver: `👤 ${employee.manager} (Reporting Manager)`,
+        checklist:[
+          `Employee role (${employee.role}) matches team requirements`,
+          `Department (${employee.department}) confirmed as correct`,
+          `Team (${employee.team}) has capacity for new member`,
+          `Buddy (${employee.buddy}) is available and briefed`,
+          'Day 1 task list reviewed & approved',
+          'Manager 1-on-1 slot blocked in calendar',
+        ],
+        onResult: async ({approved, notes}) => {
+          if (approved) {
+            this.log(`✅ Team Assignment APPROVED by ${employee.manager}${notes?' — '+notes:''}`, 'success');
+            this.log('▶️  Finalizing team allocation in HRMS…','info');
+            await sleep(600);
+            this.log('  ↳ HRMS employee record updated with team & manager','success');
+            this.log('  ↳ Org chart updated','info');
+            this.log('  ↳ Welcome message posted in team Slack channel','success');
+            await sleep(300);
+            this.log('🎉 Team Allocation COMPLETE','complete');
+          } else {
+            this.log(`❌ Team Assignment REJECTED${notes?' — '+notes:''}`, 'error');
+            this.log('🔄 Re-assigning team based on manager feedback…','warning');
+            await sleep(700);
+            this.log('✅ Re-allocation complete. Resubmitted for confirmation.','success');
+          }
+          resolve();
+        }
+      });
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  UI APPLICATION
+// ══════════════════════════════════════════════════════════════
+
+// ── Stage definitions for Member 3 pipeline ────────────────
+const STAGES = [
+  { id:'init',        label:'Pipeline Initialized',  agent:'supervisor', type:'auto'       },
+  { id:'it_prov',     label:'IT Provisioning',        agent:'it',         type:'auto'       },
+  { id:'it_gate',     label:'IT Access Approval',     agent:'it',         type:'human_gate' },
+  { id:'team_alloc',  label:'Team Allocation',        agent:'team',       type:'auto'       },
+  { id:'team_gate',   label:'Manager Confirmation',   agent:'team',       type:'human_gate' },
+  { id:'complete',    label:'Onboarding Complete 🎉', agent:'supervisor', type:'complete'   },
+];
+
+// ── DOM refs ────────────────────────────────────────────────
+const setupScreen    = document.getElementById('setup-screen');
+const dashboard      = document.getElementById('dashboard');
+const empGrid        = document.getElementById('emp-grid');
+const startBtn       = document.getElementById('start-btn');
+const dashAvatar     = document.getElementById('dash-avatar');
+const dashName       = document.getElementById('dash-name');
+const dashMeta       = document.getElementById('dash-meta');
+const stageLabelText = document.getElementById('stage-label-text');
+const progressFill   = document.getElementById('progress-fill');
+const progressPct    = document.getElementById('progress-pct');
+const agentRoster    = document.getElementById('agent-roster');
+const pipelineStages = document.getElementById('pipeline-stages');
+const logFeed        = document.getElementById('log-feed');
+const logCount       = document.getElementById('log-count');
+const modalOverlay   = document.getElementById('modal-overlay');
+const modalAgentIcon = document.getElementById('modal-agent-icon');
+const modalTitle     = document.getElementById('modal-title');
+const modalDesc      = document.getElementById('modal-desc');
+const modalApprover  = document.getElementById('modal-approver-tag');
+const modalChecklist = document.getElementById('modal-checklist');
+const modalNotes     = document.getElementById('modal-notes');
+const btnApprove     = document.getElementById('btn-approve');
+const btnReject      = document.getElementById('btn-reject');
+const completionOvl  = document.getElementById('completion-overlay');
+const compEmployee   = document.getElementById('comp-employee');
+const compStats      = document.getElementById('comp-stats');
+const restartBtn     = document.getElementById('restart-btn');
+
+// ── State ────────────────────────────────────────────────────
+let selectedEmployee = null;
+let logEventCount    = 0;
+let completedStages  = 0;
+let currentGate      = null;
+let startTime        = null;
+
+// ── Build Employee Grid ──────────────────────────────────────
+EMPLOYEES.forEach(emp => {
+  const card = document.createElement('div');
+  card.className = 'emp-card';
+  card.dataset.id = emp.id;
+
+  const deptColors = {Engineering:'rgba(99,102,241,0.12)',Design:'rgba(236,72,153,0.12)',Finance:'rgba(16,185,129,0.12)','Human Resources':'rgba(245,158,11,0.12)',Sales:'rgba(239,68,68,0.12)'};
+  const deptText   = {Engineering:'#a5b4fc',Design:'#f9a8d4',Finance:'#6ee7b7','Human Resources':'#fde68a',Sales:'#fca5a5'};
+
+  card.innerHTML = `
+    <div class="emp-avatar" style="background:${emp.avatarColor}">${emp.avatar}</div>
+    <div class="emp-name">${emp.name}</div>
+    <div class="emp-role">${emp.role}</div>
+    <div class="emp-dept" style="background:${deptColors[emp.department]||'rgba(255,255,255,0.07)'};color:${deptText[emp.department]||'#94a3b8'}">${emp.department}</div>
+  `;
+  card.addEventListener('click', () => selectEmployee(emp, card));
+  empGrid.appendChild(card);
+});
+
+function selectEmployee(emp, card) {
+  document.querySelectorAll('.emp-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  selectedEmployee = emp;
+  startBtn.disabled = false;
+}
+
+// ── Stage Rendering ─────────────────────────────────────────
+function buildPipeline() {
+  pipelineStages.innerHTML = '';
+  STAGES.forEach((s, i) => {
+    const item = document.createElement('div');
+    item.className = 'stage-item';
+    item.id = `stage-${s.id}`;
+
+    const icon = s.type==='human_gate'?'🔐': s.type==='complete'?'🎉': AGENT_PROFILES[s.agent]?.icon||'⚙️';
+    const agentProfile = AGENT_PROFILES[s.agent];
+
+    item.innerHTML = `
+      <div class="stage-connector">
+        <div class="stage-dot" style="--agent-color:${agentProfile?.color||'#6366f1'}">${icon}</div>
+        <div class="stage-line"></div>
+      </div>
+      <div style="flex:1">
+        <div class="stage-card">
+          <div class="stage-row">
+            <div class="stage-name">${s.label}</div>
+            <div class="stage-agent-tag">${agentProfile?.icon||''} ${agentProfile?.name||s.agent}</div>
+          </div>
+          <div class="stage-status-label" id="stage-status-${s.id}">Waiting…</div>
+          ${s.type==='human_gate'?'<div class="gate-badge">⚠️ Human Approval Required</div>':''}
+        </div>
+      </div>
+    `;
+    pipelineStages.appendChild(item);
+  });
+}
+
+function setStageStatus(id, state, label='') {
+  const item  = document.getElementById(`stage-${id}`);
+  const lbl   = document.getElementById(`stage-status-${id}`);
+  if (!item) return;
+  item.className = `stage-item ${state}`;
+  if (lbl && label) lbl.textContent = label;
+}
+
+// ── Agent Roster ────────────────────────────────────────────
+function buildRoster() {
+  agentRoster.innerHTML = '';
+  Object.entries(AGENT_PROFILES).forEach(([id, profile]) => {
+    const div = document.createElement('div');
+    div.className = 'agent-item';
+    div.id = `agent-${id}`;
+    div.innerHTML = `
+      <div class="agent-status-ring idle" id="ring-${id}" style="--agent-color:${profile.color}">${profile.icon}</div>
+      <div>
+        <div class="agent-name">${profile.name}</div>
+        <div class="agent-state idle" id="state-${id}">Idle</div>
+      </div>
+    `;
+    agentRoster.appendChild(div);
+  });
+}
+
+function setAgentStatus(id, state, task='') {
+  const ring  = document.getElementById(`ring-${id}`);
+  const label = document.getElementById(`state-${id}`);
+  if (!ring || !label) return;
+  ring.className  = `agent-status-ring ${state}`;
+  label.className = `agent-state ${state}`;
+  label.textContent = state==='working'? (task||'Working…') : state==='waiting'? 'Waiting for approval…' : 'Idle';
+}
+
+// ── Log Feed ────────────────────────────────────────────────
+const AGENT_ICONS = { supervisor:'🧠', it:'💻', team:'👥' };
+function addLog(msg, type='info', agent='supervisor') {
+  logEventCount++;
+  logCount.textContent = `${logEventCount} event${logEventCount!==1?'s':''}`;
+  const entry   = document.createElement('div');
+  entry.className = `log-entry log-${type}`;
+  const time = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+  entry.innerHTML = `
+    <span class="log-agent-icon">${AGENT_ICONS[agent]||'⚙️'}</span>
+    <div class="log-content">
+      <div class="log-text">${msg}</div>
+      <div class="log-time">${time}</div>
+    </div>
+  `;
+  logFeed.appendChild(entry);
+  logFeed.scrollTop = logFeed.scrollHeight;
+}
+
+// ── Progress ────────────────────────────────────────────────
+function setProgress(pct, label='') {
+  progressFill.style.width = `${pct}%`;
+  progressPct.textContent  = `${Math.round(pct)}%`;
+  if (label) stageLabelText.textContent = label;
+}
+
+// ── Approval Modal ───────────────────────────────────────────
+function showApprovalModal({ title, desc, agent, approver, checklist, onResult }) {
+  currentGate = { onResult };
+  const profile = AGENT_PROFILES[agent] || { icon:'⚙️', color:'#6366f1' };
+
+  modalAgentIcon.textContent = profile.icon;
+  modalAgentIcon.style.background = `${profile.color}22`;
+  modalAgentIcon.style.setProperty('--ring-color', profile.color);
+  modalAgentIcon.style.cssText += `;border:2px solid ${profile.color}44;`;
+  modalAgentIcon.querySelector && '';
+  modalTitle.textContent = title;
+  modalDesc.textContent  = desc;
+  modalApprover.innerHTML = `<span>👤 Approval from:</span> <strong>${approver.replace(/^👤 /,'')}</strong>`;
+  modalNotes.value = '';
+
+  modalChecklist.innerHTML = '';
+  checklist.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'check-item';
+    div.dataset.idx = i;
+    div.innerHTML = `<div class="check-box" id="cb-${i}"></div><span class="check-text">${item}</span>`;
+    div.addEventListener('click', () => {
+      div.classList.toggle('checked');
+    });
+    modalChecklist.appendChild(div);
+  });
+
+  modalOverlay.classList.add('visible');
+
+  const handleApprove = async () => {
+    const notes = modalNotes.value.trim();
+    closeModal();
+    await currentGate?.onResult?.({ approved:true, notes });
+  };
+  const handleReject = async () => {
+    const notes = modalNotes.value.trim();
+    closeModal();
+    await currentGate?.onResult?.({ approved:false, notes });
+  };
+
+  btnApprove.onclick = handleApprove;
+  btnReject.onclick  = handleReject;
+}
+
+function closeModal() {
+  modalOverlay.classList.remove('visible');
+}
+
+// ── Completion Screen ────────────────────────────────────────
+function showCompletion(employee) {
+  const elapsed = Math.round((Date.now() - startTime) / 1000);
+  compEmployee.textContent = `${employee.name} is fully provisioned and assigned to ${employee.team}!`;
+  compStats.innerHTML = `
+    <div class="stat-box"><div class="stat-num">2</div><div class="stat-name">Agents Executed</div></div>
+    <div class="stat-box"><div class="stat-num">2</div><div class="stat-name">Approvals Obtained</div></div>
+    <div class="stat-box"><div class="stat-num">${(SOFTWARE_BUNDLES[employee.department]||[]).length}</div><div class="stat-name">Software Provisioned</div></div>
+    <div class="stat-box"><div class="stat-num">${elapsed}s</div><div class="stat-name">Time to Complete</div></div>
+  `;
+  completionOvl.classList.add('visible');
+}
+
+// ── START Pipeline ───────────────────────────────────────────
+startBtn.addEventListener('click', () => {
+  if (!selectedEmployee) return;
+  runPipeline(selectedEmployee);
+});
+
+async function runPipeline(employee) {
+  startTime = Date.now();
+  logEventCount = 0; completedStages = 0;
+
+  // Switch to dashboard
+  setupScreen.classList.add('hidden');
+  dashboard.className = 'visible';
+  logFeed.innerHTML = '';
+
+  // Populate top bar
+  dashAvatar.style.background = employee.avatarColor;
+  dashAvatar.textContent      = employee.avatar;
+  dashName.textContent        = employee.name;
+  dashMeta.textContent        = `${employee.role} · ${employee.department} · ${employee.location}`;
+
+  buildPipeline();
+  buildRoster();
+  setProgress(0, 'Starting pipeline…');
+
+  // ── Stage: INIT ─────────────────────────────────────────
+  setStageStatus('init', 'active', 'Running…');
+  setAgentStatus('supervisor', 'working', 'Initializing');
+  addLog(`🧠 Supervisor Agent activated for ${employee.name}`, 'system', 'supervisor');
+  addLog(`📋 Role: ${employee.role} | Dept: ${employee.department}`, 'info', 'supervisor');
+  await sleep(700);
+  addLog('🔀 Decomposing pipeline into 5 stages…', 'delegate', 'supervisor');
+  await sleep(700);
+  addLog('📤 Delegating to IT Provisioning Agent…', 'delegate', 'supervisor');
+  setStageStatus('init', 'completed', 'Done ✓');
+  setAgentStatus('supervisor', 'idle');
+  setProgress(10, 'IT Provisioning…');
+
+  // ── Stage: IT PROVISIONING ──────────────────────────────
+  setStageStatus('it_prov', 'active', 'Running…');
+  setAgentStatus('it', 'working', 'Provisioning access');
+
+  const itAgent = new ITPAgent();
+  itAgent.addEventListener('log', e => {
+    addLog(e.detail.msg, e.detail.type, 'it');
+  });
+
+  await itAgent.run(employee, (gateData) => {
+    setStageStatus('it_prov', 'completed', 'Done ✓');
+    setStageStatus('it_gate', 'pending', 'Awaiting IT Manager approval…');
+    setAgentStatus('it', 'waiting', 'Awaiting IT approval');
+    setProgress(35, 'Waiting: IT Approval…');
+    showApprovalModal({
+      ...gateData,
+      onResult: async (result) => {
+        gateData.onResult(result);
+        if (result.approved) {
+          setStageStatus('it_gate', 'completed', 'Approved ✓');
+        } else {
+          setStageStatus('it_gate', 'rejected', 'Rejected — re-submitting');
+          await sleep(1500);
+          setStageStatus('it_gate', 'completed', 'Corrected & Resubmitted ✓');
+        }
+        setAgentStatus('it', 'idle');
+        setProgress(50, 'Team Allocation…');
+        addLog('📥 Supervisor ← IT Agent: Stage complete', 'delegate', 'supervisor');
+      }
+    });
+  });
+
+  // ── Stage: TEAM ALLOCATION ──────────────────────────────
+  await sleep(500);
+  addLog('📤 Supervisor → Team Allocation Agent: Start assignment', 'delegate', 'supervisor');
+  setStageStatus('team_alloc', 'active', 'Running…');
+  setAgentStatus('team', 'working', 'Allocating team');
+
+  const teamAgent = new TeamAgent();
+  teamAgent.addEventListener('log', e => {
+    addLog(e.detail.msg, e.detail.type, 'team');
+  });
+
+  await teamAgent.run(employee, (gateData) => {
+    setStageStatus('team_alloc', 'completed', 'Done ✓');
+    setStageStatus('team_gate', 'pending', `Awaiting ${employee.manager}'s approval…`);
+    setAgentStatus('team', 'waiting', 'Awaiting manager approval');
+    setProgress(72, 'Waiting: Manager Confirmation…');
+    showApprovalModal({
+      ...gateData,
+      onResult: async (result) => {
+        gateData.onResult(result);
+        if (result.approved) {
+          setStageStatus('team_gate', 'completed', 'Approved ✓');
+        } else {
+          setStageStatus('team_gate', 'rejected', 'Rejected — re-allocating');
+          await sleep(1500);
+          setStageStatus('team_gate', 'completed', 'Re-allocated ✓');
+        }
+        setAgentStatus('team', 'idle');
+        setProgress(90, 'Finalizing…');
+        addLog('📥 Supervisor ← Team Agent: Stage complete', 'delegate', 'supervisor');
+      }
+    });
+  });
+
+  // ── Stage: COMPLETE ─────────────────────────────────────
+  await sleep(600);
+  setStageStatus('complete', 'completed', 'Done ✓');
+  setAgentStatus('supervisor', 'working', 'Wrapping up');
+  addLog('🎉 ONBOARDING PIPELINE COMPLETE!', 'complete', 'supervisor');
+  addLog(`✨ ${employee.name} is fully provisioned and ready for Day 1.`, 'complete', 'supervisor');
+  addLog('📊 Summary: IT provisioned + Team assigned + 2 human approvals obtained.', 'info', 'supervisor');
+  setProgress(100, 'Complete!');
+  await sleep(800);
+  setAgentStatus('supervisor', 'idle');
+  await sleep(600);
+  showCompletion(employee);
+}
+
+// ── Restart ─────────────────────────────────────────────────
+restartBtn.addEventListener('click', () => {
+  completionOvl.classList.remove('visible');
+  dashboard.className = '';
+  setupScreen.classList.remove('hidden');
+  document.querySelectorAll('.emp-card').forEach(c => c.classList.remove('selected'));
+  startBtn.disabled = true;
+  selectedEmployee  = null;
+});
+</script>
+</body>
+</html>
