@@ -1,6 +1,6 @@
 @echo off
-title EnterpriseFlow AI Unified Launcher
-cd /d "%~dp0\unified_onboarding"
+title EnterpriseFlow AI
+cd /d "%~dp0"
 echo ====================================================================
 echo  Launching EnterpriseFlow AI Unified Multi-Agent Onboarding Platform
 echo ====================================================================
